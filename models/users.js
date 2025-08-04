@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   firstName: String,
   gender: String,
   birthday: Date,
-  hight: Number,
+  height: Number,
   profilePic: String,
   idActivities: [{ type: mongoose.Schema.Types.ObjectId, ref: "activities" }],
 });
