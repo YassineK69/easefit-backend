@@ -1,20 +1,35 @@
 var express = require("express");
 var router = express.Router();
+
+require("../models/connection");
+
 const { checkBody } = require("../modules/checkBody");
 const bcrypt = require("bcrypt");
 const uid2 = require("uid2");
-const User = require('../models/users'); 
-
+const User = require("../models/users");
 
 /* signIn */
+router.post("/signin", (req, res) => {
+  if (!checkBody(req.body, ["email", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
 
-
-
-
+  User.findOne({ email: req.body.email }).then((data) => {
+    if (data && bcrypt.compareSync(req.body.password, data.password)) {
+      res.json({ result: true, token: data.token });
+    } else {
+      res.json({
+        result: false,
+        error: "Pas de compte trouvé, reessayez ou inscrivez-vous",
+      });
+    }
+  });
+});
 
 /* signUp */
 router.post("/signup", (req, res) => {
-  console.log('route reçue',req.body)
+  console.log("route reçue", req.body);
   if (
     !checkBody(req.body, [
       "email",
@@ -42,7 +57,7 @@ router.post("/signup", (req, res) => {
         gender: req.body.gender,
         birthday: req.body.birthday,
         height: req.body.height,
-        profilePic: 'avatar.png',
+        profilePic: "avatar.png",
         idActivities: [],
       });
 
