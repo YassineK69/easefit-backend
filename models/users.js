@@ -1,25 +1,18 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   email: String,
-  mdp: String,
-  prénom: String,
-  nom: String, 
-  genre: String,
+  password: String,
   token: String,
-  dateDeNaissance: Date,
-  taille: Number, 
-  idActivite: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Activity'  // fait référence au modèle Activity
-  }]
-
-}, {
-  timestamps: true // Ajoute createdAt et updatedAt automatiquement
+  lastName: String,
+  firstName: String,
+  gender: String,
+  birthday: Date,
+  height: Number,
+  profilePic: String,
+  idActivities: [{ type: mongoose.Schema.Types.ObjectId, ref: "activities" }],
 });
 
-
-const User = mongoose.model('User', userSchema);
-
+const User = mongoose.model("users", userSchema);
 
 module.exports = User;

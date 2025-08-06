@@ -1,24 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const activitySchema = new mongoose.Schema({
-  idUser: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // clé étrangère vers la collection users
-    required: true
-  },
-  sport: String,
-  titre: String,
+  title: String,
+  type: String,
+  date: Date,
   duration: Number,
-  distance: Number, // en kilomètres
-  notes: Number,
-  commentaires: String,
-   
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  
+  grade: Number,
+  comment: String,
+  idUser: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+  activitiesPic: [String]
 });
 
-const Activity = mongoose.model('Activity', activitySchema);
+const Activity = mongoose.model("activities", activitySchema);
 module.exports = Activity;
