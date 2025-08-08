@@ -24,7 +24,9 @@ router.post("/signin", (req, res) => {
   .populate ('idActivities')
   .then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token, activities : data.idActivities });
+    console.log('first name', data.firstName);
+      res.json({ result: true, token: data.token, activities : data.idActivities, firstName: data.firstName });
+      
     } else {
       res.json({
         result: false,
