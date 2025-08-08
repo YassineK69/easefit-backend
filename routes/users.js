@@ -20,9 +20,11 @@ router.post("/signin", (req, res) => {
     return;
   }
 
-  User.findOne({ email: req.body.email }).then((data) => {
+  User.findOne({ email: req.body.email })                                                   //Ajout populate pour recup activities
+  .populate ('idActivities')
+  .then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token });
+      res.json({ result: true, token: data.token, activities : data.idActivities });
     } else {
       res.json({
         result: false,
