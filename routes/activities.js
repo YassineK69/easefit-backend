@@ -5,7 +5,7 @@ const { checkBody } = require("../modules/checkBody");
 const User = require("../models/users");
 const Activity = require("../models/activities");
 
-// AFFICHAGE DES ACTIVITES
+// AFFICHAGE DES ACTIVITES//
 
 //Get Calendar : on recup les types de sport et dates pour affichage calendrier
 
