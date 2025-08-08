@@ -13,7 +13,7 @@ router.get('/calendar/:token', (req,res) => {
 
     User.findOne({token:req.params.token}).populate({
         path: "idActivities",
-        select: "type date -_id",
+        select: "title type date duration grade comment -_id",          // tous les champs utiles
     })
     .then(user => {
         if(!user) {
@@ -33,27 +33,31 @@ router.post('/newactivity/:token', (req,res) => {
         if (!data) {
             res.json({result:false})
         } else {
-            const id = data._id
-            const newActivity = new Activity({
-                title : req.body.title, 
-                type : req.body.type,
-                duration : req.body.duration, 
-                date : req.body.date,
-                activitiesPic : [], 
-                comment : req.body.comment, 
-                grade : req.body.grade, 
-                idUser : id,
-            })
-
-            newActivity.save().then (savedActivity => {
-                User.updateOne(
-                    {token : req.params.token}, 
-                    {$push: {idActivities:savedActivity._id}}
-                )
-                .then(()=> {
-                    res.json({result : true, newActivity : savedActivity})
+            if (!req.body.title || !req.body.type || !req.body.date || !req.body.duration || !req.body.grade) {   //Ajout verif champs complets
+                return res.json({ result: false, error: 'Champs manquants' });
+            } else {
+                const id = data._id
+                const newActivity = new Activity({
+                    title : req.body.title, 
+                    type : req.body.type,
+                    duration : req.body.duration, 
+                    date : req.body.date,
+                    activitiesPic : [], 
+                    comment : req.body.comment, 
+                    grade : req.body.grade, 
+                    idUser : id,
                 })
-            })
+
+                newActivity.save().then (savedActivity => {
+                    User.updateOne(
+                        {token : req.params.token}, 
+                        {$push: {idActivities:savedActivity._id}}
+                    )
+                    .then(()=> {
+                        res.json({result : true, newActivity : savedActivity})
+                    })
+                })
+            }
         }
     })    
 })
