@@ -79,7 +79,7 @@ router.post("/signup", (req, res) => {
 });
 
 /* Get user infos. */
-router.get('/user/:token', async (req, res) => {
+router.get('/:token', async (req, res) => {
   const userToken = req.params.token;
   try {
 if (!userToken) {
