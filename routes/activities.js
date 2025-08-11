@@ -82,7 +82,7 @@ function createDateRandom() {
   return result;
 }
 
-const activities = ["muscu", "course", "fitness"];
+const activities = ["Muscu", "Course", "Fitness"];
 
 const setDeTest = Array.from({ length: 100 }, (_, i) => ({
   title: `activité ${i}`,
@@ -92,35 +92,32 @@ const setDeTest = Array.from({ length: 100 }, (_, i) => ({
   grade: Math.trunc(5 * Math.random()) + 1,
 }));
 
-router.get("/loadsettestdb/:token", (req, res) => {
-  User.findOne({ token: req.params.token }).then((data) => {
-    if (!data) {
-      res.json({ result: false });
-    } else {
-      const id = data._id;
-      for (let obj of setDeTest) {
-        const newActivity = new Activity({
-          title: obj.title,
-          type: obj.type,
-          duration: obj.duration,
-          date: obj.date,
-          activitiesPic: [],
-          comment: "Ceci est un commentaire pour le set de test",
-          grade: obj.grade,
-          idUser: id,
-        });
+router.get("/loadsettestdb/:token", async (req, res) => {
+  const data = await User.findOne({ token: req.params.token });
+  if (!data) {
+    res.json({ result: false });
+  } else {
+    const id = data._id;
+    for (let obj of setDeTest) {
+      const newActivity = new Activity({
+        title: obj.title,
+        type: obj.type,
+        duration: obj.duration,
+        date: obj.date,
+        activitiesPic: [],
+        comment: "Ceci est un commentaire pour le set de test",
+        grade: obj.grade,
+        idUser: id,
+      });
 
-        newActivity.save().then((savedActivity) => {
-          User.updateOne(
-            { token: req.params.token },
-            { $push: { idActivities: savedActivity._id } }
-          ).then(() => {
-            res.json({ result: true });
-          });
-        });
-      }
+      const savedActivity = await newActivity.save();
+      await User.updateOne(
+        { token: req.params.token },
+        { $push: { idActivities: savedActivity._id } }
+      );
     }
-  });
+    res.json({ result: true });
+  }
 });
 
 module.exports = router;
