@@ -24,7 +24,7 @@ router.get("/calendar/:token", (req, res) => {
       });
     });
 });
-
+  
 // ENREGISTREMENT NOUVELLE ACTIVITE
 router.post("/newactivity/:token", (req, res) => {
   User.findOne({ token: req.params.token }).then((data) => {
