@@ -24,7 +24,8 @@ router.post("/signin", (req, res) => {
   .populate ('idActivities')
   .then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token, activities : data.idActivities });
+      res.json({ result: true, token: data.token, activities : data.idActivities, firstName: data.firstName });
+      
     } else {
       res.json({
         result: false,
@@ -69,7 +70,7 @@ router.post("/signup", (req, res) => {
       });
 
       newUser.save().then((newDoc) => {
-        res.json({ result: true, token: newDoc.token });
+        res.json({ result: true, token: newDoc.token, firstName: newDoc.firstName});
       });
     } else {
       // User already exist in database
@@ -79,7 +80,7 @@ router.post("/signup", (req, res) => {
 });
 
 /* Get user infos. */
-router.get('/user/:token', async (req, res) => {
+router.get('/:token', async (req, res) => {
   const userToken = req.params.token;
   try {
 if (!userToken) {
