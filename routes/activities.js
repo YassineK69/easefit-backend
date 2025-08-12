@@ -5,10 +5,9 @@ const { checkBody } = require("../modules/checkBody");
 const User = require("../models/users");
 const Activity = require("../models/activities");
 
-// AFFICHAGE DES ACTIVITES//
+// AFFICHAGE DES ACTIVITES //
 
-//Get Calendar : on recup les types de sport et dates pour affichage calendrier
-
+// Get Calendar : on récupère les types de sport et dates pour affichage calendrier
 router.get("/calendar/:token", (req, res) => {
   User.findOne({ token: req.params.token })
     .populate({
@@ -17,53 +16,74 @@ router.get("/calendar/:token", (req, res) => {
     })
     .then((user) => {
       if (!user) {
-        return "utilisateur non trouvé";
+        return res.json({ result: false, error: "Utilisateur non trouvé" });
       }
       res.json({
         activities: user.idActivities,
       });
     });
 });
-  
-// ENREGISTREMENT NOUVELLE ACTIVITE
-router.post("/newactivity/:token", (req, res) => {
-  User.findOne({ token: req.params.token }).then((data) => {
-    if (!data) {
-      res.json({ result: false });
-    } else {
-      if (
-        !req.body.title ||
-        !req.body.type ||
-        !req.body.date ||
-        !req.body.duration ||
-        !req.body.grade
-      ) {
-        //Ajout verif champs complets
-        return res.json({ result: false, error: "Champs manquants" });
-      } else {
-        const id = data._id;
-        const newActivity = new Activity({
-          title: req.body.title,
-          type: req.body.type,
-          duration: req.body.duration,
-          date: req.body.date,
-          activitiesPic: [],
-          comment: req.body.comment,
-          grade: req.body.grade,
-          idUser: id,
-        });
 
-        newActivity.save().then((savedActivity) => {
-          User.updateOne(
-            { token: req.params.token },
-            { $push: { idActivities: savedActivity._id } }
-          ).then(() => {
-            res.json({ result: true, newActivity: savedActivity });
-          });
-        });
-      }
+// ENREGISTREMENT NOUVELLE ACTIVITE
+router.post("/newactivity/:token", async (req, res) => {
+  try {
+    // Recherche de l'utilisateur par token
+    const user = await User.findOne({ token: req.params.token });
+    if (!user) {
+      return res.json({ result: false, error: "Utilisateur non trouvé" });
     }
-  });
+
+    const { title, type, date, duration, grade, comment } = req.body;
+
+    // Vérification que tous les champs obligatoires sont présents
+    if (!title || !type || !date || !duration || !grade) {
+      return res.json({ result: false, error: "Champs manquants" });
+    }
+
+    // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
+    // On définit la plage de temps correspondant au jour entier (min et max de la date)
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Recherche d'une activité existante sur la même date
+    const existingActivity = await Activity.findOne({
+      idUser: user._id,
+      date: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    if (existingActivity) {
+      // Si une activité existe déjà, on refuse l'ajout
+      return res.json({ result: false, error: "Activité déjà enregistrée pour ce jour" });
+    }
+
+    // Sinon, création et sauvegarde de la nouvelle activité
+    const newActivity = new Activity({
+      title,
+      type,
+      duration,
+      date,
+      activitiesPic: [],
+      comment,
+      grade,
+      idUser: user._id,
+    });
+
+    const savedActivity = await newActivity.save();
+
+    // Mise à jour de l'utilisateur avec l'id de la nouvelle activité
+    await User.updateOne(
+      { token: req.params.token },
+      { $push: { idActivities: savedActivity._id } }
+    );
+
+    // Réponse positive avec l'activité créée
+    res.json({ result: true, newActivity: savedActivity });
+  } catch (error) {
+    console.error(error);
+    res.json({ result: false, error: "Erreur serveur" });
+  }
 });
 
 // REMPLISSAGE DE LA BDD POUR UN SET DE TEST
