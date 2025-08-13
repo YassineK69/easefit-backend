@@ -31,10 +31,12 @@ router.get("/calendar/:token", (req, res) => {
 // ENREGISTREMENT NOUVELLE ACTIVITE                                   //MODIF ROUTE POUR PHOTO GALERIE+IMPORT
 router.post("/newactivity/:token", async (req, res) => {
 
-    try {
+  try {
+
+
       const data = await User.findOne({ token: req.params.token });
       if (!data) {
-        return res.json({ result: false });
+        return res.json({ result: false, error:"Utilisateur non trouvé" });
       }
 
   if (!req.body.title || !req.body.type || !req.body.date || !req.body.duration || !req.body.grade) {
@@ -43,18 +45,16 @@ router.post("/newactivity/:token", async (req, res) => {
 
   // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
   // On définit la plage de temps correspondant au jour entier (min et max de la date)
-  
-  const startOfDay = new Date(date);
+ const startOfDay = new Date(req.body.date);
   startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
+  const endOfDay = new Date(req.body.date);
   endOfDay.setHours(23, 59, 59, 999);
-
+  
   // Recherche d'une activité existante sur la même date
   const existingActivity = await Activity.findOne({
-    idUser: user._id,
+    idUser: data._id,
     date: { $gte: startOfDay, $lte: endOfDay },
   });
-
   if (existingActivity) {
   // Si une activité existe déjà, on refuse l'ajout
     return res.json({ result: false, error: "Activité déjà enregistrée pour ce jour" });
@@ -105,9 +105,15 @@ router.post("/newactivity/:token", async (req, res) => {
 
   res.json({ result: true, newActivity: formattedActivity });
   
-} catch (error) {
-      res.json({ result: false, error: error });
-}
+
+    
+  } catch (error) {
+      res.json({ result: false, error });
+
+    
+  }
+
+  
 });
 
 // REMPLISSAGE DE LA BDD POUR UN SET DE TEST
