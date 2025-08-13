@@ -41,6 +41,25 @@ router.post("/newactivity/:token", async (req, res) => {
         return res.json({ result: false, error: "Champs manquants" });
       }
 
+      // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
+      // On définit la plage de temps correspondant au jour entier (min et max de la date)
+      
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Recherche d'une activité existante sur la même date
+      const existingActivity = await Activity.findOne({
+        idUser: user._id,
+        date: { $gte: startOfDay, $lte: endOfDay },
+      });
+
+      if (existingActivity) {
+      // Si une activité existe déjà, on refuse l'ajout
+        return res.json({ result: false, error: "Activité déjà enregistrée pour ce jour" });
+      }
+
       if (!req.files || !req.files.activitiesPic) {
         return res.json({ result: false, error: "Image manquante" });
       }
