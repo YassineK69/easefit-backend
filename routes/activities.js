@@ -28,7 +28,7 @@ router.get("/calendar/:token", (req, res) => {
     });
 });
 
-// ENREGISTREMENT NOUVELLE ACTIVITE                                   //MODIF ROUTE POUR PHOTO GALERIE+IMPORT
+// ENREGISTREMENT NOUVELLE ACTIVITE                                   //MODIF ROUTE POUR PHOTO GALERIE+IMPORT // 
 router.post("/newactivity/:token", async (req, res) => {
   try {
     const data = await User.findOne({ token: req.params.token });
