@@ -4,6 +4,9 @@ const { checkBody } = require("../modules/checkBody");
 
 const User = require("../models/users");
 const Activity = require("../models/activities");
+const uniqid = require('uniqid');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 
 // AFFICHAGE DES ACTIVITES//
 
@@ -25,45 +28,67 @@ router.get("/calendar/:token", (req, res) => {
     });
 });
 
-// ENREGISTREMENT NOUVELLE ACTIVITE
-router.post("/newactivity/:token", (req, res) => {
-  User.findOne({ token: req.params.token }).then((data) => {
-    if (!data) {
-      res.json({ result: false });
-    } else {
-      if (
-        !req.body.title ||
-        !req.body.type ||
-        !req.body.date ||
-        !req.body.duration ||
-        !req.body.grade
-      ) {
-        //Ajout verif champs complets
-        return res.json({ result: false, error: "Champs manquants" });
-      } else {
-        const id = data._id;
-        const newActivity = new Activity({
-          title: req.body.title,
-          type: req.body.type,
-          duration: req.body.duration,
-          date: req.body.date,
-          activitiesPic: [],
-          comment: req.body.comment,
-          grade: req.body.grade,
-          idUser: id,
-        });
-
-        newActivity.save().then((savedActivity) => {
-          User.updateOne(
-            { token: req.params.token },
-            { $push: { idActivities: savedActivity._id } }
-          ).then(() => {
-            res.json({ result: true, newActivity: savedActivity });
-          });
-        });
+// ENREGISTREMENT NOUVELLE ACTIVITE                                   //MODIF ROUTE POUR PHOTO GALERIE+IMPORT
+router.post("/newactivity/:token", async (req, res) => {
+  
+    try {
+      const data = await User.findOne({ token: req.params.token });
+      if (!data) {
+        return res.json({ result: false });
       }
+
+      if (!req.body.title || !req.body.type || !req.body.date || !req.body.duration || !req.body.grade) {
+        return res.json({ result: false, error: "Champs manquants" });
+      }
+
+      if (!req.files || !req.files.activitiesPic) {
+        return res.json({ result: false, error: "Image manquante" });
+      }
+
+      const activitiesPicPath = `./tmp/${uniqid()}.jpg`;                      //Enlever le '.' avant le déploiement
+      const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
+
+      if (resultMove) {
+        return res.json({ result: false, error: resultMove });
+      }
+
+      const resultCloudinary = await cloudinary.uploader.upload(activitiesPicPath);
+
+      fs.unlinkSync(activitiesPicPath);
+
+      const id = data._id;
+      const newActivity = new Activity({
+        title: req.body.title,
+        type: req.body.type,
+        duration: req.body.duration,
+        date: new Date(req.body.date),
+        activitiesPic: resultCloudinary.secure_url, 
+        comment: req.body.comment,
+        grade: req.body.grade,
+        idUser: id,
+      });
+
+      const savedActivity = await newActivity.save();
+
+      await User.updateOne(
+        { token: req.params.token },
+        { $push: { idActivities: savedActivity._id } }
+      );
+      const formattedActivity = {
+        title: savedActivity.title,
+        type: savedActivity.type,
+        duration: savedActivity.duration,
+        date: new Date(savedActivity.date),
+        activitiesPic: resultCloudinary.secure_url, 
+        comment: savedActivity.comment,
+        grade: savedActivity.grade,
+      }
+
+      res.json({ result: true, newActivity: formattedActivity });
+      
+    } catch (error) {
+          res.json({ result: false, error: error });
     }
-  });
 });
 
 // REMPLISSAGE DE LA BDD POUR UN SET DE TEST
