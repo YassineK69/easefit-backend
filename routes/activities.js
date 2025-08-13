@@ -13,7 +13,7 @@ router.get("/calendar/:token", (req, res) => {
   User.findOne({ token: req.params.token })
     .populate({
       path: "idActivities",
-      select: "title type date duration grade comment -_id", // tous les champs utiles
+      select: "title type date duration grade comment activitiesPic -_id ", // tous les champs utiles
     })
     .then((user) => {
       if (!user) {
@@ -82,13 +82,13 @@ function createDateRandom() {
   return result;
 }
 
-const activities = ["Muscu", "Course", "Fitness"];
+const activities = ["Muscu", "Muscu","Muscu","Course", "Fitness"];
 
 const setDeTest = Array.from({ length: 100 }, (_, i) => ({
   title: `activité ${i}`,
   type: activities[Math.floor(Math.random() * activities.length)],
   date: createDateRandom(),
-  duration: Math.trunc(180 * Math.random()) + 1,
+  duration: Math.trunc(170 * Math.random()) + 11,
   grade: Math.trunc(5 * Math.random()) + 1,
 }));
 
