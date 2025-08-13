@@ -4,9 +4,9 @@ const { checkBody } = require("../modules/checkBody");
 
 const User = require("../models/users");
 const Activity = require("../models/activities");
-const uniqid = require('uniqid');
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
+const uniqid = require("uniqid");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
 
 // AFFICHAGE DES ACTIVITES//
 
@@ -30,90 +30,91 @@ router.get("/calendar/:token", (req, res) => {
 
 // ENREGISTREMENT NOUVELLE ACTIVITE                                   //MODIF ROUTE POUR PHOTO GALERIE+IMPORT
 router.post("/newactivity/:token", async (req, res) => {
-
   try {
+    const data = await User.findOne({ token: req.params.token });
+    if (!data) {
+      return res.json({ result: false, error: "Utilisateur non trouvé" });
+    }
 
+    if (
+      !req.body.title ||
+      !req.body.type ||
+      !req.body.date ||
+      !req.body.duration ||
+      !req.body.grade
+    ) {
+      return res.json({ result: false, error: "Champs manquants" });
+    }
 
-      const data = await User.findOne({ token: req.params.token });
-      if (!data) {
-        return res.json({ result: false, error:"Utilisateur non trouvé" });
-      }
+    // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
+    // On définit la plage de temps correspondant au jour entier (min et max de la date)
+    const startOfDay = new Date(req.body.date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(req.body.date);
+    endOfDay.setHours(23, 59, 59, 999);
 
-  if (!req.body.title || !req.body.type || !req.body.date || !req.body.duration || !req.body.grade) {
-    return res.json({ result: false, error: "Champs manquants" });
-  }
+    // Recherche d'une activité existante sur la même date
+    const existingActivity = await Activity.findOne({
+      idUser: data._id,
+      date: { $gte: startOfDay, $lte: endOfDay },
+    });
+    if (existingActivity) {
+      // Si une activité existe déjà, on refuse l'ajout
+      return res.json({
+        result: false,
+        error: "Activité déjà enregistrée pour ce jour",
+      });
+    }
 
-  // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
-  // On définit la plage de temps correspondant au jour entier (min et max de la date)
- const startOfDay = new Date(req.body.date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(req.body.date);
-  endOfDay.setHours(23, 59, 59, 999);
-  
-  // Recherche d'une activité existante sur la même date
-  const existingActivity = await Activity.findOne({
-    idUser: data._id,
-    date: { $gte: startOfDay, $lte: endOfDay },
-  });
-  if (existingActivity) {
-  // Si une activité existe déjà, on refuse l'ajout
-    return res.json({ result: false, error: "Activité déjà enregistrée pour ce jour" });
-  }
+    if (!req.files || !req.files.activitiesPic) {
+      return res.json({ result: false, error: "Image manquante" });
+    }
 
-  if (!req.files || !req.files.activitiesPic) {
-    return res.json({ result: false, error: "Image manquante" });
-  }
+    const activitiesPicPath = `./tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
+    const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
 
-  const activitiesPicPath = `./tmp/${uniqid()}.jpg`;                      //Enlever le '.' avant le déploiement
-  const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
+    if (resultMove) {
+      return res.json({ result: false, error: "erreur move" });
+    }
+    //error: resultMove
+    const resultCloudinary = await cloudinary.uploader.upload(
+      activitiesPicPath
+    );
 
-  if (resultMove) {
-    return res.json({ result: false, error: resultMove });
-  }
+    fs.unlinkSync(activitiesPicPath);
 
-  const resultCloudinary = await cloudinary.uploader.upload(activitiesPicPath);
+    const id = data._id;
+    const newActivity = new Activity({
+      title: req.body.title,
+      type: req.body.type,
+      duration: req.body.duration,
+      date: new Date(req.body.date),
+      activitiesPic: resultCloudinary.secure_url,
+      comment: req.body.comment,
+      grade: req.body.grade,
+      idUser: id,
+    });
 
-  fs.unlinkSync(activitiesPicPath);
+    const savedActivity = await newActivity.save();
 
-  const id = data._id;
-  const newActivity = new Activity({
-    title: req.body.title,
-    type: req.body.type,
-    duration: req.body.duration,
-    date: new Date(req.body.date),
-    activitiesPic: resultCloudinary.secure_url, 
-    comment: req.body.comment,
-    grade: req.body.grade,
-    idUser: id,
-  });
+    await User.updateOne(
+      { token: req.params.token },
+      { $push: { idActivities: savedActivity._id } }
+    );
+    const formattedActivity = {
+      title: savedActivity.title,
+      type: savedActivity.type,
+      duration: savedActivity.duration,
+      date: new Date(savedActivity.date),
+      activitiesPic: resultCloudinary.secure_url,
+      comment: savedActivity.comment,
+      grade: savedActivity.grade,
+    };
 
-  const savedActivity = await newActivity.save();
-
-  await User.updateOne(
-    { token: req.params.token },
-    { $push: { idActivities: savedActivity._id } }
-  );
-  const formattedActivity = {
-    title: savedActivity.title,
-    type: savedActivity.type,
-    duration: savedActivity.duration,
-    date: new Date(savedActivity.date),
-    activitiesPic: resultCloudinary.secure_url, 
-    comment: savedActivity.comment,
-    grade: savedActivity.grade,
-  }
-
-  res.json({ result: true, newActivity: formattedActivity });
-  
-
-    
+    res.json({ result: true, newActivity: formattedActivity });
   } catch (error) {
-      res.json({ result: false, error });
-
-    
+    res.json({ result: false, error:"Erreur Update" });
   }
-
-  
 });
 
 // REMPLISSAGE DE LA BDD POUR UN SET DE TEST
@@ -132,7 +133,7 @@ function createDateRandom() {
   return result;
 }
 
-const activities = ["Muscu", "Muscu","Muscu","Course", "Fitness"];
+const activities = ["Muscu", "Muscu", "Muscu", "Course", "Fitness"];
 
 const setDeTest = Array.from({ length: 100 }, (_, i) => ({
   title: `activité ${i}`,
@@ -160,13 +161,13 @@ router.get("/loadsettestdb/:token", async (req, res) => {
         idUser: id,
       });
 
-  const savedActivity = await newActivity.save();
-  await User.updateOne(
-    { token: req.params.token },
-    { $push: { idActivities: savedActivity._id } }
-  );
-}
-res.json({ result: true });
+      const savedActivity = await newActivity.save();
+      await User.updateOne(
+        { token: req.params.token },
+        { $push: { idActivities: savedActivity._id } }
+      );
+    }
+    res.json({ result: true });
   }
 });
 
