@@ -120,7 +120,7 @@ function createDateRandom() {
     month = month > 9 ? parseInt(month) : "0" + parseInt(month);
     let day = Math.floor(Math.random() * 28) + 1;
     day = day > 9 ? parseInt(day) : "0" + parseInt(day);
-    result = 2025-${month}-${day}T00:00:00.000+00:00;
+    result = `2025-${month}-${day}T00:00:00.000+00:00`;
   } while (dejaDonne.includes(result));
   dejaDonne.push(result);
   return result;
@@ -129,7 +129,7 @@ function createDateRandom() {
 const activities = ["Muscu", "Course", "Fitness"];
 
 const setDeTest = Array.from({ length: 100 }, (_, i) => ({
-  title: activité ${i},
+  title: `activité ${i}`,
   type: activities[Math.floor(Math.random() * activities.length)],
   date: createDateRandom(),
   duration: Math.trunc(180 * Math.random()) + 1,
