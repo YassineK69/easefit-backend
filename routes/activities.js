@@ -209,7 +209,7 @@ router.post("/addPicture/:token", async (req, res) => {
     { _id: req.body.idActivity },
     { $push: { activitiesPic: resultCloudinary.secure_url } }
   );
-  res.json({ result: true });
+  res.json({ result: true , activitiesPic: resultCloudinary.secure_url });
 });
 
 module.exports = router;
