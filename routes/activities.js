@@ -70,7 +70,7 @@ router.post("/newactivity/:token", async (req, res) => {
       return res.json({ result: false, error: "Image manquante" });
     }
 
-    const activitiesPicPath = `./tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
+    const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
     const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
 
     if (resultMove) {
@@ -196,7 +196,7 @@ router.post("/addPicture/:token", async (req, res) => {
     if (!req.files || !req.files.activitiesPic) {
       return res.json({ result: false, error: "Image manquante" });
     }
-    const activitiesPicPath = `./tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
+    const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
     const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
 
     if (resultMove) {
