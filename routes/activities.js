@@ -171,50 +171,45 @@ router.get("/loadsettestdb/:token", async (req, res) => {
   }
 });
 
-// REMPLISSAGE DE LA BDD POUR L AJOUT D4UNE PHOTO SUPPLEMENTAIRE
+// REMPLISSAGE DE LA BDD POUR L AJOUT D'UNE PHOTO SUPPLEMENTAIRE
 router.post("/addPicture/:token", async (req, res) => {
-  try {
-    const data = await User.findOne({ token: req.params.token });
-    if (!data) {
-      return res.json({ result: false, error: "Utilisateur non trouvé" });
-    }
-    if (!req.body.idActivity) {
-      return res.json({ result: false, error: "Champ idActivity manquant" });
-    }
-    // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
-    const existingActivity = await Activity.findOne({
-      idUser: data._id,
-      _id: req.body.idActivity,
-    });
-    if (!existingActivity) {
-      return res.json({
-        result: false,
-        error: "Activité non enregistrée pour ce jour",
-      });
-    }
-
-    if (!req.files || !req.files.activitiesPic) {
-      return res.json({ result: false, error: "Image manquante" });
-    }
-    const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
-    const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
-
-    if (resultMove) {
-      return res.json({ result: false, error: resultMove });
-    }
-    const resultCloudinary = await cloudinary.uploader.upload(
-      activitiesPicPath
-    );
-
-    fs.unlinkSync(activitiesPicPath);
-    await Activity.updateOne(
-      {_id: req.body.idActivity, },
-      { $push: { activitiesPic: resultCloudinary.secure_url } }
-    );
-    res.json({ result: true });
-  } catch (error) {
-    res.json({ result: false, error: error });
+  const data = await User.findOne({ token: req.params.token });
+  if (!data) {
+    return res.json({ result: false, error: "Utilisateur non trouvé" });
   }
+  if (!req.body.idActivity) {
+    return res.json({ result: false, error: "Champ idActivity manquant" });
+  }
+  // Vérification qu'il n'existe pas déjà une activité pour ce jour pour cet utilisateur
+  const existingActivity = await Activity.findOne({
+    idUser: data._id,
+    _id: req.body.idActivity,
+  });
+  if (!existingActivity) {
+    return res.json({
+      result: false,
+      error: "Activité non enregistrée pour ce jour",
+    });
+  }
+
+  if (!req.files || !req.files.activitiesPic) {
+    return res.json({ result: false, error: "Image manquante" });
+  }
+  const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
+  const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
+
+  if (resultMove) {
+    return res.json({ result: false, error: resultMove });
+  }
+  const resultCloudinary = await cloudinary.uploader.upload(activitiesPicPath);
+
+  fs.unlinkSync(activitiesPicPath);
+
+  await Activity.updateOne(
+    { _id: req.body.idActivity },
+    { $push: { activitiesPic: resultCloudinary.secure_url } }
+  );
+  res.json({ result: true });
 });
 
 module.exports = router;
