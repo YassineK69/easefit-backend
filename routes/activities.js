@@ -204,7 +204,7 @@ router.post("/addPicture/:token", async (req, res) => {
   }
   const resultCloudinary = await cloudinary.uploader.upload(activitiesPicPath);
 
-  fs.unlinkSync(activitiesPicPath);
+  fs.unlinkSync(activitiesPicPath); //
 
   await Activity.updateOne(
     { _id: req.body.idActivity },
