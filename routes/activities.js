@@ -14,17 +14,12 @@ const fs = require("fs");
 
 router.get("/calendar/:token", (req, res) => {
   User.findOne({ token: req.params.token })
-    .populate({
-      path: "idActivities",
-      select: "title type date duration grade comment activitiesPic -_id ", // tous les champs utiles
-    })
-    .then((user) => {
-      if (!user) {
+    .populate("idActivities")
+    .then((data) => {
+      if (!data) {
         return "utilisateur non trouvé";
       }
-      res.json({
-        activities: user.idActivities,
-      });
+      res.json({ result: true, activities: data.idActivities });
     });
 });
 
@@ -63,7 +58,7 @@ router.post("/newactivity/:token", async (req, res) => {
       return res.json({
         result: false,
         error: "Activité déjà enregistrée pour ce jour",
-      });//
+      }); //
     }
 
     if (!req.files || !req.files.activitiesPic) {
@@ -109,7 +104,7 @@ router.post("/newactivity/:token", async (req, res) => {
       activitiesPic: resultCloudinary.secure_url,
       comment: savedActivity.comment,
       grade: savedActivity.grade,
-      _id:savedActivity._id,
+      _id: savedActivity._id,
     };
 
     res.json({ result: true, newActivity: formattedActivity });
@@ -210,7 +205,7 @@ router.post("/addPicture/:token", async (req, res) => {
     { _id: req.body.idActivity },
     { $push: { activitiesPic: resultCloudinary.secure_url } }
   );
-  res.json({ result: true , activitiesPic: resultCloudinary.secure_url });
+  res.json({ result: true, activitiesPic: resultCloudinary.secure_url });
 });
 
 module.exports = router;
