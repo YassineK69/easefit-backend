@@ -109,6 +109,7 @@ router.post("/newactivity/:token", async (req, res) => {
       activitiesPic: resultCloudinary.secure_url,
       comment: savedActivity.comment,
       grade: savedActivity.grade,
+      _id:savedActivity._id,
     };
 
     res.json({ result: true, newActivity: formattedActivity });
