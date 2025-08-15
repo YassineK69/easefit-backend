@@ -10,7 +10,7 @@ const fs = require("fs");
 
 // AFFICHAGE DES ACTIVITES//
 
-//Get Calendar : on recup les types de sport et dates pour affichage calendrier
+// Get Calendar : on recup les types de sport et dates pour affichage calendrier
 
 router.get("/calendar/:token", (req, res) => {
   User.findOne({ token: req.params.token })
@@ -66,30 +66,35 @@ router.post("/newactivity/:token", async (req, res) => {
       });//
     }
 
+    let picLink 
+
     if (!req.files || !req.files.activitiesPic) {
-      return res.json({ result: false, error: "Image manquante" });
+      picLink = [];
+      // return res.json({ result: false, error: "Image manquante" });
+    } else {
+      const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
+      const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
+
+      if (resultMove) {
+        return res.json({ result: false, error: "erreur move" });
+      }
+      //error: resultMove
+      const resultCloudinary = await cloudinary.uploader.upload(
+        activitiesPicPath
+      );
+
+      fs.unlinkSync(activitiesPicPath);
+
+      picLink = [resultCloudinary.secure_url]
     }
 
-    const activitiesPicPath = `/tmp/${uniqid()}.jpg`; //Enlever le '.' avant le déploiement
-    const resultMove = await req.files.activitiesPic.mv(activitiesPicPath);
-
-    if (resultMove) {
-      return res.json({ result: false, error: "erreur move" });
-    }
-    //error: resultMove
-    const resultCloudinary = await cloudinary.uploader.upload(
-      activitiesPicPath
-    );
-
-    fs.unlinkSync(activitiesPicPath);
-
-    const id = data._id;
-    const newActivity = new Activity({
+      const id = data._id;
+      const newActivity = new Activity({
       title: req.body.title,
       type: req.body.type,
       duration: req.body.duration,
       date: new Date(req.body.date),
-      activitiesPic: resultCloudinary.secure_url,
+      activitiesPic: picLink,
       comment: req.body.comment,
       grade: req.body.grade,
       idUser: id,
@@ -101,17 +106,17 @@ router.post("/newactivity/:token", async (req, res) => {
       { token: req.params.token },
       { $push: { idActivities: savedActivity._id } }
     );
-    const formattedActivity = {
-      title: savedActivity.title,
-      type: savedActivity.type,
-      duration: savedActivity.duration,
-      date: new Date(savedActivity.date),
-      activitiesPic: resultCloudinary.secure_url,
-      comment: savedActivity.comment,
-      grade: savedActivity.grade,
-    };
+    // const formattedActivity = {
+    //   title: savedActivity.title,
+    //   type: savedActivity.type,
+    //   duration: savedActivity.duration,
+    //   date: new Date(savedActivity.date),
+    //   activitiesPic: resultCloudinary.secure_url,
+    //   comment: savedActivity.comment,
+    //   grade: savedActivity.grade,
+    // };
 
-    res.json({ result: true, newActivity: formattedActivity });
+    res.json({ result: true, newActivity: savedActivity });
   } catch (error) {
     res.json({ result: false, error: "Erreur Update" });
   }
