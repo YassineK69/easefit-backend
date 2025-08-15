@@ -63,7 +63,7 @@ router.post("/newactivity/:token", async (req, res) => {
       return res.json({
         result: false,
         error: "Activité déjà enregistrée pour ce jour",
-      });
+      });//
     }
 
     if (!req.files || !req.files.activitiesPic) {
