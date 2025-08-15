@@ -106,16 +106,7 @@ router.post("/newactivity/:token", async (req, res) => {
       { token: req.params.token },
       { $push: { idActivities: savedActivity._id } }
     );
-    // const formattedActivity = {
-    //   title: savedActivity.title,
-    //   type: savedActivity.type,
-    //   duration: savedActivity.duration,
-    //   date: new Date(savedActivity.date),
-    //   activitiesPic: resultCloudinary.secure_url,
-    //   comment: savedActivity.comment,
-    //   grade: savedActivity.grade,
-    // };
-
+   
     res.json({ result: true, newActivity: savedActivity });
   } catch (error) {
     res.json({ result: false, error: "Erreur Update" });
@@ -208,7 +199,7 @@ router.post("/addPicture/:token", async (req, res) => {
   }
   const resultCloudinary = await cloudinary.uploader.upload(activitiesPicPath);
 
-  fs.unlinkSync(activitiesPicPath);
+  fs.unlinkSync(activitiesPicPath); //
 
   await Activity.updateOne(
     { _id: req.body.idActivity },
